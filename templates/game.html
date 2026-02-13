@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chord Trainer Game</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        .game-container {
+            margin-top: 50px;
+            padding: 20px;
+            background: white;
+            display: inline-block;
+            box-shadow: 0px 0px 10px #ccc;
+            border-radius: 10px;
+        }
+        .chord-box {
+            font-size: 30px;
+            font-weight: bold;
+            padding: 10px;
+            margin-top: 20px;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+        }
+        .score {
+            font-size: 20px;
+            margin-top: 10px;
+        }
+        button {
+            font-size: 18px;
+            padding: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+            border: none;
+            background-color: #28a745;
+            color: white;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 Chord Trainer Game</h1>
+    <div class="game-container">
+        <h2>Select Mood:</h2>
+        <select id="mood-select">
+            <option value="">-- Select a Mood --</option>
+            <option value="happy">Happy</option>
+            <option value="sad">Sad</option>
+            <option value="calm">Calm</option>
+            <option value="excited">Excited</option>
+            <option value="melancholic">Melancholic</option>
+        </select>
+        <button id="start-game">🎮 Start Game</button>
+
+        <div class="chord-box" id="chord-box">Press Start</div>
+        <p class="score">Score: <span id="score">0</span></p>
+        <button id="play-chord">🎵 Play Chord</button>
+        <button id="next-chord">➡️ Next Chord</button>
+    </div>
+
+    <script>
+        let selectedMood = "";
+        let currentChord = "";
+        let score = 0;
+
+        document.addEventListener("DOMContentLoaded", function () {
+           
+            document.getElementById("start-game").addEventListener("click", function() {
+                selectedMood = document.getElementById("mood-select").value;
+                
+                if (!selectedMood) {
+                    alert("❗ Please select a mood before starting!");
+                    return;
+                }
+
+                console.log("🎮 Start Game button clicked. Selected mood:", selectedMood);
+
+                $.ajax({
+                    url: "http://127.0.0.1:5002/select-mood",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({ mood: selectedMood }),
+                    success: function(data) {
+                        console.log("✅ Mood selected successfully:", data);
+                        alert("Mood Selected: " + data.mood);
+                        nextChord();
+                    },
+                    error: function(xhr) {
+                        console.log("❌ Error selecting mood:", xhr.responseText);
+                        alert("Error selecting mood! " + xhr.responseText);
+                    }
+                });
+            });
+
+            // ⏭ Get Next Chord
+            document.getElementById("next-chord").addEventListener("click", function() {
+                if (!selectedMood) {
+                    alert("❗ Please select a mood first!");
+                    return;
+                }
+
+                $.ajax({
+                    url: "http://127.0.0.1:5002/next-chord",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({ sequence: [currentChord], mood: selectedMood }),
+                    success: function(data) {
+                        if (data.error) {
+                            alert("❌ Error: " + data.error);
+                            return;
+                        }
+                        console.log("➡️ Next chord received:", data);
+                        currentChord = data.chord;
+                        document.getElementById("chord-box").innerText = "Press: " + currentChord;
+                    },
+                    error: function() {
+                        alert("❌ Error getting next chord!");
+                    }
+                });
+            });
+
+            // 🎵 Play Chord
+            document.getElementById("play-chord").addEventListener("click", function() {
+                if (!currentChord) {
+                    alert("❗ No chord to play! Press 'Next Chord' first.");
+                    return;
+                }
+
+                $.ajax({
+                    url: "http://127.0.0.1:5002/play-chord",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({ chord: currentChord }),
+                    success: function(data) {
+                        console.log("🎵 Playing chord:", data);
+
+                        if (data.midi_url) {
+                            let audio = new Audio(data.midi_url);
+                            audio.play().catch(error => console.log("❌ Audio playback error:", error));
+                        } else {
+                            alert("❌ Error: No MIDI file received!");
+                        }
+                    },
+                    error: function(xhr) {
+                        console.log("❌ Error playing MIDI:", xhr.responseText);
+                        alert("❌ Error playing MIDI!");
+                    }
+                });
+            });
+        }); // ✅ Properly closed the DOMContentLoaded event
+    </script>
+</body>
+</html>
+
+

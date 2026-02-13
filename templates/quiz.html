@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>🎵 Music Theory Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding-top: 50px;
+        }
+        .quiz-container {
+            background: white;
+            display: inline-block;
+            padding: 20px 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .question {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .options li {
+            list-style: none;
+            padding: 8px;
+            background: #eee;
+            margin: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .options li:hover {
+            background: #d0e8ff;
+        }
+        .score {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+    <!-- ✅ jQuery CDN -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+<h1>🎵 Music Theory Quiz</h1>
+
+<div class="quiz-container">
+    <div class="question" id="question">Loading...</div>
+    <ul class="options" id="options"></ul>
+    <p class="score">Score: <span id="score">0</span></p>
+</div>
+
+<script>
+    let score = 0;
+
+    function loadQuestion() {
+        $.ajax({
+            url: "/get-music-question",
+            method: "GET",
+            success: function(data) {
+                $("#question").text(data.question);
+                $("#options").empty();
+                data.options.forEach(option => {
+                    $("#options").append(
+                        `<li onclick="checkAnswer('${option}', '${data.correct}')">${option}</li>`
+                    );
+                });
+            },
+            error: function() {
+                $("#question").text("❌ Failed to load question.");
+            }
+        });
+    }
+
+    function checkAnswer(selected, correct) {
+        if (selected === correct) {
+            score++;
+            alert("✅ Correct!");
+        } else {
+            alert("❌ Wrong! Correct answer: " + correct);
+        }
+        $("#score").text(score);
+        loadQuestion();
+    }
+
+    $(document).ready(function() {
+        loadQuestion();
+    });
+</script>
+
+</body>
+</html>
